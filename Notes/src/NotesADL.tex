@@ -38,13 +38,10 @@
   \textit{Neuro-Plasticity} is the ability of a neural system to adapt its structure to accommodate new information (i.e. Learn). This can take several forms including growth \& function changes.
 \end{definition}
 
-\subsection{Feed-Forward Networks}
-
 \begin{definition}{Feed-Forward Network} is an artificial neural network where the connections between nodes are uni-directional. Data is provided to the input layer and then an output is returned from the output layer, no layers are visited twice.
-
 \end{definition}
 
-\subsubsection{Perceptron}
+\subsection{Perceptron}
 
 \begin{definition}{Perceptron}
   A \textit{Perceptron} is an algorithm for supervised learning of a binary classifier. A perceptron defines a hyperplane which acts as a decision boundary which linearly separates the input-state space. These two regions correspond to the two-classes. A perceptron has the following structure.
@@ -116,7 +113,7 @@
   \end{enumerate}
 \end{proposition}
 
-\subsubsection{Multi-Layer Perceptron}
+\subsection{Multi-Layer Perceptron}
 
 \begin{remark}{Learning Arbitrary Decision Boundaries}
   To lean an arbitrary decision boundary (i.e. anything non-linear) can be done by using a \textit{Multi-Layer Preceptron} with non-linear activation functions.
@@ -258,6 +255,57 @@
   \[ [\Delta\pmb{w}]_i=\eta x_i(\underbrace{\pmb{w}^T_t\pmb{x}}_{f(\pmb{x};\pmb{w}_t)}-f^*(\pmb{x})) \]
 \end{definition}
 
+\begin{definition}{Online Gradient Descent}
+  \begin{enumerate}
+    \item \texttt{initialise} all weights $W$ randomly.
+    \item \texttt{for} $t=0,1,\dots$ \texttt{do}:
+    \begin{enumerate}
+      \item \texttt{pick} net training sample $(x,f^*)$.
+      \item \texttt{forward-backward pass} to compute $\nabla J$.
+      \item \texttt{update} weights $W\leftarrow W-\eta\nabla J$.
+      \item \texttt{if} (stopping criteria met) \texttt{break loop}.
+    \end{enumerate}
+    \item \texttt{return} final weights $W$.
+  \end{enumerate}
+\end{definition}
+
+\begin{remark}{Using Single Samples}
+  Using single samples to find the minimum point of the cost function will only roughly approximate aspects of the cost function gradient in online mode, leading to a very noisy gradient descent which may not find the global minimum at all.
+  \par Thus, it is not good to do online learning. And if the learning rate $\eta$ is set too \textit{large} then we may overshoot the global minimum. If the learning rate $\eta$ is set too \textit{small} then we takes a very long time to find a minimum.
+\end{remark}
+
+\begin{proposition}{Using Multiple Samples}
+  As using a single sample is bad, we try using multiple samples at once and using the average $\nabla J$. There are two approaches
+  \begin{itemize}
+    \item \textit{Deterministic Gradient Descent} (DGD) where \underline{all} training samples $(X,F^*)$ are used. Given a small enough learning rate $\eta$ this will process to the true local minimum, but at high computational cost.
+    \item \textit{Stochastic Gradient Descent} (MiniBatch) where a \underline{small subset} of training samples $(X,F^*)$ are used. This is still good at finding a minimum, and much less computationally costly.
+  \end{itemize}
+  For the average of $\nabla J$ we use
+  \[ \nabla J=\frac1{|X|}\nabla_W\sum_j L(\underbrace{f(\mathbf{x}_j,W)}_\text{\tiny prediction},f^*) \]
+\end{proposition}
+
+\begin{proposition}{Setting the Learning Rate $\eta$}
+  Setting the learning rate $\eta$ can be hard so a process called \textit{Simulated Annealing} is used to test out several learning rates.
+  \par Let $\eta_0$ be an initial (high) learning rate and $\eta_\tau$ be a final (smaller) learning rate. \textit{Simulated Annealing} transitions from $\eta_0$ to $\eta_\tau$.
+  \begin{enumerate}
+    \item \texttt{initialise} all weights $W$ randomly.
+    \item \texttt{for} $k=0,\dots,\tau$ \texttt{do}:
+    \begin{enumerate}
+      \item $\eta_k:=\left(1-\frac{k}\tau)\eta_0+\frac{k}\tau\eta_\tau$
+      \item \texttt{for} $t=0,1,\dots$ \texttt{do}:
+      \begin{enumerate}
+        \item \texttt{pick} net training sample $(x,f^*)$.
+        \item \texttt{forward-backward pass} to compute $\nabla J$.
+        \item \texttt{update} weights $W\leftarrow W-\eta_k\nabla J$.
+        \item \texttt{if} (stopping criteria met) \texttt{break loop}.
+      \end{enumerate}
+      \item \texttt{return} final weights $W$.
+    \end{enumerate}
+  \end{enumerate}
+\end{proposition}
+
+%TODO here 18:00 lecture 4
+
 \subsubsection{Auto-Differentitation}
 
 \begin{proposition}{Calculating Partial Derivatives}
@@ -314,6 +362,13 @@
   \end{tikzpicture}\end{center}
 \end{example}
 
+\begin{proposition}{Feedforward Computational Graph - Neural Network}
+  \begin{center}
+    \includegraphics[width=.7\textwidth]{NeuralNetworkComputationalGraph.PNG}
+  \end{center}
+  Remember that $J(\cdot,\cdot)$ is the cost function; $s_j^l:=(w^l)^Tf^{l-1}$ is the signal of a layer; $g_j^l(\cdot)$ is the activation function of a layer; $f_j^l:=g_j^l(s_j^l)$ is the output of the layer;
+\end{proposition}
+
 \begin{definition}{Auto-Differentiation using a Feedforward Computational Graph}
   Consider two nodes in a computational graph $x,y$ and suppose you want to find the partial derivative $\frac{\partial x}{\partial y}$.
   \begin{enumerate}
@@ -350,5 +405,183 @@
   So when $f=4,g=2$ we have that $a=150$ and $\frac{\partial a}{\partial f}=60$.
 \end{example}
 
+\begin{proposition}{Using Hierarchical Dependency}
+  By the chain rule we have that $\frac{\partial x}{\partial z}=\frac{\partial x}{\partial y}\frac{\partial y}{\partial z}$. So, if $\frac{\partial x}{\partial y}$ is already known then we just need to multiply that value by $\frac{\partial y}{\partial z}$ to get $\frac{\partial x}{\partial z}$.
+  \par This can be utilised to ease the computational load of a calculation. In particular, calculating the derivatives one layer at a time is a good strategy.
+\end{proposition}
+
+\begin{remark}{Usefulness of Auto-Differentiation}
+  \textit{Auto-Differentiation} allows us to mathematical quantify the affect one variable has on another, which is good. However, the number of paths in a network grows exponentially with the number of nodes, thus this can be computational hard. (\textit{Hierarchical Dependence} can be used to mitigate this)
+\end{remark}
+
+\subsection{Backpropagation Algorithm}
+
+\begin{remark}{Backpropagation Algorithm - Intuition}
+  The \textit{Backpropagation Algorithm} combines \textit{reverse auto-differentiation} with \textit{gradient descent}. Reverse auto-differentiation is used to find the relationship between the cost function and each weight; and gradient descent to perform stepwise adjustments on weights.
+  \par The \textit{Backpropagation Algorithm} seeks to compute the discrepancy between the network's output and the target value; then propagate this discrepancy backwards through the network to determine the influence of each weight on this discrepancy, by considering the influence of each path.
+\end{remark}
+
+\begin{proposition}{Backpropagation Algorithm - Overall Strategy}
+  \begin{enumerate}
+    \item Read the input \& perform a forward pass through the network. (This will calculate all $s_j^l,f_j^l$.)
+    \item Calculate the cost function between each final layer neuron and its target $J(f_j^*,f_j^N)$.
+    \item Calculate the error derivatives $\delta_j^{N+1}$ of the cost function $J$ wrt each final layer neuron $f_j^N$
+    \[ \delta_j^{N+1}:=\frac{\partial J}{\partial f_j^N} \]
+    \item Compute the error derivative $\delta_j^N$ of the cost function wrt the signals of the last layer
+    \[ \delta_j^N:=\frac{\partial J}{\partial s_j^N}=g_j^N'(s_j^N)\cdot\delta_j^{N+1} \]
+    \item Layer-by-layer calculate the \textit{error derivatives} $\delta_i^{l-1}$ of the cost function wrt the signal each neuron in the next layer, using the error derivatives $\delta_j^l$ of the layer above
+    \[ \delta_i^{l-1}:=\frac{\partial J}{\partial s_i^{l-1}}=g_i^{l-1}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l \]
+    \item Calculate the error derivates wrt to the weights of each neuron $\frac{\partial J}{\partial w_{ik}^l}$ using the error derivatives of the neuron activities $\delta_j^l$.
+    \[ \frac{\partial J}{\partial w_{ij}^l}=\frac{\partial J}{\partial s_j^l}\frac{\partial s_j^l}{\partial w_{ij}^l}=\delta_j^lf_i^{l-1} \]
+  \end{enumerate}
+\end{proposition}
+
+\begin{proof}{Derivation of $\delta_i^{l-1}$}
+  \[\begin{array}{rrl}
+    \delta_i^{l-1}&:=&\frac{\partial J}{\partial s_i^{l-1}}\\
+    &=&\displaystyle\sum_{j=1}^{d(l)}\underbrace{\frac{\partial J}{\partial s_j^l}}_{\delta_j^l} \underbrace{\frac{\partial s_j^l}{\partial f_j^{l-1}}}_{w_{ij}^l} \underbrace{\frac{\partial f_i^{l-1}}{\partial s_i^{l-1}}}_{g^{l-1}_i'(s_i^{l-1})}\\
+    &=&\displaystyle\sum_{j=1}^{d(l)}\delta_j^lw_{ij}^lg_i^{l-1}'(s_i^{l-1})\\
+    &=&\displaystyle g_i^{l-1}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l
+    \end{array}\]
+\end{proof}
+
+\begin{proposition}{Backpropagation Algorithm}
+  \begin{enumerate}
+    \item \texttt{initialise} all weights randomly (typically to small values).
+    \item \texttt{for} $t=0$ \texttt{do}
+    \begin{enumerate}
+      \item \texttt{pick} next training sample $([f_1^0,f_2^0,\dots],[f_1^*,f_2^*,\dots])$.
+      \item \texttt{forward pass} compute all layer outputs $\displaystyle s_j^l:=\sum_{i=1}^{d(l-1)}w_{ij}^lf_i^{l-1}$ and $\displaystyle f_j^l:=g_j^l(s_j^l)$. [i)]
+      \item \texttt{compute} derivative of cost function wrt final layer $\delta_j^N:=g_j^N'(s_j^N)\cdot \frac{\partial J}{\partial f_j^N}$. [ii)-iii)]
+      \item \texttt{backward pass} compute all deltas $\delta_i^{l-1}:=\displaystyle g_i^{l-1}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l$ [iv)-vi)]
+      \item \texttt{update} all weights based on deltas and neuron activities $w_{ij}^l\leftarrow w_{ij}^l-\eta f_i^{l-1}\delta_j^l$ [gradient descent]
+      \item \texttt{if} (stopping criteria met): \texttt{break loop}
+    \end{enumerate}
+    \item \texttt{return} final weights $w_{ij}^l$
+  \end{enumerate}
+\end{proposition}
+
+\begin{remark}{Issues with Backpropagation Algorithm}
+  The \textit{Backpropagation Algorithm} was known for 30 years before deep learning began. There are a few factors which prevented deep learning starting earlier:
+  \begin{itemize}
+    \item The \textit{Vanishing Gradient Problem}. Gradients are unstable/noisey when you backpropagate gradients in a very deep network.
+    \item Descent-based optimisation techniques need to work accurately and \underline{fast in practice}, despite large training data sets. This was not possible before GPU parallelisation and improved optimisers.
+    \item The number of parameters explode in deep networks (every node in one layer is connected to every node in the next layer, for all layers!). This can be addressed by sharing parameters (e.g. CNNs) or reuse parameters (e.g. RNNs).
+    \item Regularisation techniques are critical to achieve good generalisation beyond the training data available (avoid overfitting).
+  \end{itemize}
+\end{remark}
+
+\begin{remark}{Activation Functions need to be Differentiable \& Non-Linear}
+  For the \textit{Back-Propagation Algorithm} the derivative of each activation function is used, so each activation function must be differentiable.
+  \par The step-function does not fulfil this. $\tanh$ was consider as an alternative, however the gradient of its derivative is vanishingly small on the tails. This causes $\delta_i^{l-1}$ to become close to 0 (are saturated), significantly slowing down learning of early layers (if any learning occurs at all).
+  \par This is addressed (usually) by forwarding signal via a residual neural network (ResNet), or using specially robust neuron layouts.
+\end{remark}
+
+\begin{definition}{Rectifying Linear Unit (ReLU)}
+  \textit{ReLU} is an activation function which combines high speed of evaluation with a non-saturating non-linear function
+  \[\begin{array}{rcl}
+      g_{ReLU}(s)&:=&\max\{0,s\}\\
+      g_{ReLU}'(s)&:=&\begin{cases}1&\text{if }s\geq0\\0\text{otherwise}\end{cases}
+  \end{array}\]
+\end{definition}
+
+\begin{remark}{Usefulness of ReLU}
+  Using \textit{ReLU} may reach network convergence 5-10 times faster than using $\tanh$.
+  \par However, using \textit{ReLU} introduces a problem of \textit{Dying Neurons} where a large gradient flowing through \textit{ReLU} may force the neuron never to activate again (as it pushes the incoming signal to 0). This is bad, as these neurons will no longer contribute to learning anymore.
+\end{remark}
+
+\subsection{Momentum}
+
+\begin{proposition}{Learning via Momentum}
+  Learning via \textit{Momentum} is an extension of gradient descent. A velocity term $v$ for \textit{`current descent speed`} is introduce. The velocity term defines the step sizes, depending upon how large \& how aligned to previous gradients a new gradient is.
+  \par Formally we now define weight updates as
+  \[ W_{t+1}=W_t+\underbrace{v_{t+1}}_\text{\tiny momentum}\quad\text{where}\quad v_{t+1}=\underbrace{\alpha}_{ \underset{\text{parameter}}{\text{momentum}}}\cdot v_t-\eta\nabla J(X;W_t) \]
+  Momentum can overshoot.
+\end{proposition}
+
+\begin{proposition}{Nesterov Accelerated Gradient (NAG)}
+  \textit{Nesterov Accelerated Gradient} is an extension of \textit{Learning via Momentum}, where instead of calculating the gradient at the current position you lookahead at the gradient of the target. This is since \textit{Momentum} will carry us towards the next location anyway.
+  \par Formally we now define weight updates as
+  \[ W_{t+1}=W_t+v_{t+1}\quad\text{where}\quad v_{t+1}=\alpha v_t-\eta\nabla J(X;\underbrace{W_t+\alpha v_t}_{ \underset{\text{perview}}{\text{location}}}) \]
+  NAG is consistently better that \textit{Learning via Momentum} in practice.
+\end{proposition}
+
+\begin{remark}{When Momentum Struggles}
+  Methods which use momentum progress very slowly in shallow plateau regions of the cost function state space as momentum is not able to build up.
+  \par This can be rectified by improving the learning rate.
+\end{remark}
+
+\begin{proposition}{Newton's Method}
+  \textit{Newton's Method} removes all hyperparameters (inc. \textit{Learning Rate} $\eta$) and instead uses curvature to rescale the gradient, by multiplying the gradient by the inverse Hessian of the current cost function $H(J(X;W_t))$. This leads to an optimisation that takes aggressive steps in directions of shallow curvature, and shorter steps in directions of steep curvature.
+  \par Formally we now define weight updates as
+  \[ W_{t+1}=W_t- H(J(X;W_t))^_{-1}\nablda J(X;W_t)\]
+  \par Computing and inverting the Hessian is computationally and space expensive. Newton's method is attracted to saddle points (bad!).
+\end{proposition}
+
+\begin{remark}{The more parameters there are the more likely saddle points are}
+  Saddle points occur when the hessian has both positive \& negative eigenvalues. This is more likely when we have more parameters (as the probability of all eigenvalues being positive is low).
+  \par Random Matrix Theory states that the lower the cost function $J$ is (ie the closer it is to the global minimum), the more likely to find positive eigenvalues. This means that if we find a minimum it is likely to be a good one (i.e. low cost).
+  \par Thus, most critical points with higher cost values $J$ should be saddle points, which we can escape using symmetry-breaking descent methods.
+\end{remark}
+
+\subsection{Function Adaptive Optimisation Algorithms}
+
+\begin{definition}{Adaptive Gradient Algorithm (AdaGrad)}
+  The \textit{AdaGrad} algorithm keeps track of per-weight learning rates to force evenly spread learning speeds across the weights. This means that weights with a high gradient have their learning rate decreases, whilst those with low gradients have it increased.
+  \par Formally we now define weight updates as
+  \[
+    W_{t+1}=W_t-\eta\dfrac{\nabla J(X;W_t)}{\sqrt{A_{t+1}+\varepsilon}}\quad\text{where}\quad A_{t+1}=A_t+\big(\nabla J(X;W_t)\big)^2
+  \]
+  NOTE perform element-by-element squaring and $\varepsilon$ is used to avoid division by zero.\\
+  $A_t$ is an accumulator vector, which accumulates the changes so far in each dimension.
+\end{definition}
+
+\begin{remark}{Limitations of Monotonic Learning}
+  \textit{Monotonic Learning} is very aggressive and lacks the possibility of late adjustments, meaning learning usually stops too early.
+\end{remark}
+
+\begin{proposition}{Root-Mean-Square Propagation (RMSProp)}
+  \textit{RMSProp} combats the aggressive reduction in \textit{AdaGrad}'s learning speed by propagation of a smooth running average, using a smoothing parameter $\beta$.
+  \par Formally we now define weight updates as
+  \[
+    W_{t+1}=W_t-\eta\dfrac{\nabla J(X;W_t)}{\sqrt{A_{t+1}+\varepsilon}}\quad\text{where}\quad A_{t+1}=\beta A_t+(1-\beta)\big(\nabla J(X;W_t)\big)^2
+  \]
+  NOTE perform element-by-element squaring and $\varepsilon$ is used to avoid division by zero.\\
+\end{proposition}
+
+\begin{proposition}{Adaptive Moment Estimation (AdaM)}
+  The \textit{AdaM} algorithm is an extension of \textit{RMSProp} with two new additions.
+  \begin{enumerate}
+    \item Smoothing \textit{RMSProp's} (usually noisy) incoming gradient by using a new parameter $\alpha$
+    \item Correcting the impact of bias which is introuced by \textit{initialising} the two smoother measures.
+  \end{enumerate}
+  \[\begin{array}{rcl}
+    G_{t+1}&=&\alpha G_t+(1-\alpha)\nabla J(X;W_t)\\
+    \bar{G}&=&\dfrac{G_{t+1}}{1-\alpha^t}\\
+    A_{t+1}&=&\beta A_t+(1-\beta)[\nabla J(X;W_t)]^2\\
+    \bar{A}&=&\dfrac{A_{t+1}}{1-\beta^t}\\
+    W_{t+1}&=&W_t-\eta\dfrac{\bar{G}_{t+1}}{\sqrt{\bar{A}_{t+1}}+\varpepsilon}
+  \end{array}\]
+\end{proposition}
+
+\begin{remark}{Using AdaM}
+  Applying AdaM to a ReLU-based network is sufficient to perform deep learning but there is no guarantee of success for a few reasons
+  \begin{enumerate}
+    \item We have hyperparameters $\alpha,\beta,\varepsilon,\dots$ which need to be set
+    \item The size of each mini-batch is not certain.
+    \item How do we initialise the network?
+    \item How do we avoid overfitting? Especially with so many parameters.
+    \item Which loss function to use.
+  \end{enumerate}
+  Achieving top-end results in deep learning often involves lots of parameter tuning, testing and trial-and-error.
+\end{remark}
+
+\newpage
+\setcounter{section}{-1}
+\section{Reference}
+
+\begin{definition}{Hessian Matrix}
+  \[ H(J)=\begin{pmatrix}\frac{\partial J^2}{\partial w_1^2}&\frac{\partial J^2}{\partial w_1\partial w_2}&\dots&\frac{\partial J^2}{\partial w_1\partial w_n}\\\frac{\partial J^2}{\partial w_2\partial w_1}&\frac{\partial J^2}{\partial w_2^2}&\dots&\frac{\partial J^2}{\partial w_2\partial w_n}\\\vdots&\vdots&\ddots&\vdots\\\frac{\partial J^2}{\partial w_n\partla w_1}&\frac{\partial J^2}{\partial w_n\partial w_2}&\dots&\frac{\partial J^2}{\partial w_n^2}\end{pmatrix}\]
+\end{definition}
 
 \end{document}
