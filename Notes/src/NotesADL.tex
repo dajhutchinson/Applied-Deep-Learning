@@ -41,6 +41,13 @@
 \begin{definition}{Feed-Forward Network} is an artificial neural network where the connections between nodes are uni-directional. Data is provided to the input layer and then an output is returned from the output layer, no layers are visited twice.
 \end{definition}
 
+\begin{proposition}{Neural Networks as an Ensemble of Sub-Networks}
+  A \textit{Neural Network} can be considered to represent many \textit{sub-networks}. These sub-networks are switched between depending on which components are picked and how they are defined.
+  \begin{center}
+    \includegraphics[width=.35\textwidth]{SubNeuralNetworks.PNG}
+  \end{center}
+\end{proposition}
+
 \subsection{Perceptron}
 
 \begin{definition}{Perceptron}
@@ -232,7 +239,95 @@
     &f_i^j&:=&g_i^j(s_i^j)&\tiny i^{th}\text{ output vajue of }j^{th}\text{ hidden layer}\\
     \implies&\dfrac{\partial f_i^j}{\partial s_i^j}&=&\text{depends on def of }g_i^j
   \end{array}\]
+\end{proposition}
 
+\begin{proposition}{Output Layer for Classification Problem}
+  To use an MLP for classification we require the output layer to represent a probability distribution for the possible classes (i.e. each node has a value in $[0,1]$ and the sum of all nodes is $1$).
+  \par We can force outputs to reflect this distribution using a \textit{Softmax Neuron Group} in the last layer with activation function
+  \[ g_j^N(s_j^N):=\frac{e^{s_j^N}}{\sum_{i\in\text{Group}\ e^{s_i^N}}} \]
+  This has gradients
+  \[\begin{array}{rcl}
+    g'_j^N(s_j^N)&=&f_j^N(1-f_j^n)\\
+    g'_j^N(s_{i\neq j}^N)&=&-f_j^Nf_i^N
+  \end{array}\]
+  All outputs $f_i^N:=g_i^N(s_i^N)$ range between 0 and 1, while the $\sum_{i\in\text{Group}}f_i=1$.
+\end{proposition}
+
+\subsection{Problems}
+
+\subsubsection{Overfitting}
+
+\begin{proposition}{High Parameter Space Overfitting}
+  Multi-Layer perceptrons often have millions of neurons, with millions of parameters \& connections. These models have very high degrees of freedom and thus are prone to overfitting.
+\end{proposition}
+
+\begin{proposition}{Identifying Overfitting}
+  When training a neural network we can plot the \textit{Loss Function} for the training data against that for the testing data, values after each epoch. Overfitting occurs if the distance between these lines increases over time.
+  \begin{center}
+    \includegraphics[width=.7\textwidth]{overfitting.PNG}
+  \end{center}
+  A natural idea from this is to keep a copy of the model with the smallest generalisation width, and then reverting to it after all the training.
+\end{proposition}
+
+\begin{remark}{Overfitting can always be addressed by using more data, more representative data and/or strategically sampling data.}
+  Deep Learning techniques are particularly good at extract new information from new data. Whereas some older algorithms reach a ceiling where they can no longer learn form new information.
+\end{remark}
+
+\begin{proposition}{Obtaining More Data (Data Augmentation)}
+  Data for deep learning is expensive to collect as it requires ground truth annotations. \textit{Data Augmentation} is a se of techniques used to increase the size of our data pool, without having to collect more data, by slightly modifying existing data. This can be done as an \textit{online process} during training.
+  \par For images these techniques include: cropping, adding noise, rotating, translation, hue shift etc.
+\end{proposition}
+
+\begin{definition}{Regularisation}
+  A \textit{Regularisation} is any modification made to a learning algorithm which is intended to reduced its \textit{generalisation error}, \underline{but} not its \textit{training error}.
+\end{definition}
+
+\begin{definition}{$L$-Regularisation}
+  \textit{$L$-Regularisation} constrains the weight space (i.e. makes certain weight values more likely to be learned by the system).
+\end{definition}
+
+\begin{definition}{$L1$-Regularisation}
+  \textit{$L1$-Regularisation} targets a local minimum with \textit{sparse} weights to combat overfitting (ie using very few nodes). This is done by introducing a penalty to the cost function for every weight, based on the \textit{absolute value} of the weight. This penalises non-zero weight values. This gives a cost function of the form
+  \[ J(X;W)=\underbrace{\frac1{|X|}\sum_{x\in X}L(f(x;W),f^*(x))}_\text{normal cost function}+\frac12\sum_{w\in W}\mu|w| \]
+  During training this gives us the update rule
+  \[ W_{t+1}=W_t-\eta\cdot\left[\underbrace{\nabla J_\text{plain}(X;W^t)}_\text{normal cost function}+\mu\text{sign}(W^t)\right] \]
+\end{definition}
+
+\begin{definition}{$L2$-Regularisation}
+  \textit{$L2$-Regularisation} targets a local minimum with \textit{small-magnitude} weights to combat overfitting (ie lots of nodes making small contributions). This is done by introducing a penalty to the cost function for every weight, based on the \textit{squared value} of the weight. This penalises higher weights more. This gives a cost function of the form
+  \[ J(X;W)=\underbrace{\frac1{|X|}\sum_{x\in X}L(f(x;W),f^*(x))}_\text{normal cost function}+\frac12\sum_{w\in W}\lambda w^2 \]
+  During training this gives us the update rule
+  \[ W_{t+1}=W_t-\eta\cdot\left[\underbrace{\nabla J_\text{plain}(X;W^t)}_\text{normal cost function}+\lambda W^t\right] \]
+\end{definition}
+
+\begin{definition}{Dropout}
+  \textit{Dropout} uses the idea that Neural Networks are in fact an ensemble of sub-networks (\texttt{Proposition 2.1}) and tries to define a training procedure so that each sub-network can learn (somewhat) independently by dropping out \underline{nodes}.
+  \par This is done by, during each training loop, setting the incoming weights weights to a random set of nodes to 0 with probability $1-p$ (effectively immobilising a random set of neurons) and then training the network. This is particularly effective on fully connected networks.
+  \par $p$ is often set to .5 before tuning on the validation set. During validation all weights are turned on, so the output of the network is significantly greater. To combat this weights are set to $pW$ in order to reduce their magnitude. $p$ is then tuned.
+\end{definition}
+
+\begin{definition}{DropConnect}
+  \textit{DropConnect} is a variation on \textit{Dropout} where \underline{connections} are dropped, rather than nodes. This is done by setting a random set of weights to zero, with probability $1-p$, during each training cycle. This a more fine-grained approach to ensemble learning than \textit{Dropout}.
+\end{definition}
+
+\subsection{Usefulness}
+
+\begin{remark}{Advantages of Deep Neural Networks}
+  \begin{itemize}
+    \item \textit{Hierarchical Automatic Modularisation}. A deep neural network has many layers, and the information of each layer is available to the succeeding layer. This means each layer can be considered to extract slightly more precise features (e.g. pixel colours $\to$ edges $\to$ corners $\to$ object parts $\to$ object class). These modular layers are generated automatically during training.
+    \item \textit{Practical Performance}. Greater depth gives greater performance than greater width. Note that large networks require more training time and larger data sets.
+    \item \textit{Oscillation Argument}. There are functions $f$ that can be represented by a \underline{deep} ReLU network with a polynomial number of neurons, whereas a \underline{shallow} network would require exponentially many units.
+  \end{itemize}
+\end{remark}
+
+\subsection{Possible Extensions}
+
+\begin{proposition}{Network Distillation}
+  Is it possible to learn an ensemble of deep networks, but then \textit{compress} these deep networks into a single shallow (or more efficient) network? Sometimes.
+\end{proposition}
+
+\begin{proposition}{Mixture of Experts}
+  We could learn a series of networks which each deal with a specific subtask of a problem and then use another network to decide which of these networks (or order of networks) to use in each instance.
 \end{proposition}
 
 \section{Training Algorithms}
@@ -481,7 +576,7 @@
   \textit{ReLU} is an activation function which combines high speed of evaluation with a non-saturating non-linear function
   \[\begin{array}{rcl}
       g_{ReLU}(s)&:=&\max\{0,s\}\\
-      g_{ReLU}'(s)&:=&\begin{cases}1&\text{if }s\geq0\\0\text{otherwise}\end{cases}
+      g_{ReLU}'(s)&:=&\begin{cases}1&\text{if }s\geq0\\0&\text{otherwise}\end{cases}
   \end{array}\]
 \end{definition}
 
@@ -575,6 +670,36 @@
   \end{enumerate}
   Achieving top-end results in deep learning often involves lots of parameter tuning, testing and trial-and-error.
 \end{remark}
+
+\subsection{Cost Functions for Classification}
+
+\begin{remark}{Cost Functions for Classification Problem}
+  In classification problems it is not obvious how to define the distance between classifications, and thus how to define a cost function. Using the setup of activation functions proposed in \texttt{Proposition 2.5} it is common to use the \textit{Cross-Entropy Cost Function}
+\end{remark}
+
+\begin{definition}{Cross-Entropy Cost Function}
+  Let $f^*_j$ be the ground truth for output node $j$ and $f_j^N$ be our predicted value for the ground truth for output node $j$. The \textit{Cross-Entropy Cost Function} is define as
+  \[\begin{array}{rrl}
+  J&=&-\displaystyle\sum_{j\in\text{Group}}f_j^*\ln(f_j^N)\\
+  \delta_i^N&=&\displaystyle\sum_{j\in\text{Group}}\frac{\partial J}{\partial f_j^N}\frac{\partial f_j^N}{\partial s_i^N}\\
+  &=&f_i^N-f_i^*
+  \end{array}\]
+  The steepness of the cost function derivative $\frac{\partial J}{\partial f_j^N}$ \underline{exactly} cancels the shallowness of the softmax derivative $\frac{\partial f_j^N}{\partial s_i^N}$, leading to an \textit{MSE-Style Delta} $\delta+i^N$ which is propagated backwards from layer $N$.
+\end{definition}
+
+\begin{proposition}{Derivation of $\delta_i^N$ for Cross-Entropy Cost Function}
+  \everymath={\displaystyle}
+  \[\begin{array}{rrlcl}
+    \delta_i^N&:=&\frac{\partial J}{\partial s_i^N}&\quad&\\
+    &=&-\sum_{j\in\text{Group}}f_j^*\underbrace{\frac{\partial \ln(f_j^N)}{\partial s_i^N}}_\text{apply chain rule}\\
+    &=&-\sum_{j\in\text{Group}}f_j^*\frac1{f_j^N}\frac{\partial f_j^N}{\partial s_i^N}&&\text{where }f_j^N:=\frac{e^{s_j^N}}{\sum_{i\in\text{Group}e^{s_i^N}}}\\
+    &=&-\sum_{j=i}f_j^*\frac1{f_j^N}\underbrace{f_j^N(1-f_j^N)}_{\frac{\partial f_j^N}{\partial s_i^N}\text{ for }i=j}-\sum_{j\neq i}f_j^*\frac1{f_j^N}\underbrace{(-f_j^Nf_i^N)}_{\frac{\partial f_j^N}{\partial s_i^N}\text{ for }i\neq j}\\
+    &=&-f_i^*(1-f_i^N)+\sum_{j\neq i}f_j^*\frac{f_j^Nf_i^N}{f_j^N}\\
+    &=&-f_i^*+\underbrace{f_i^*f_i^N+\sum_{j\neq i}f_j^*f_i^N}_{=f_i^N\sum_{j\in\text{Group}}f_j^*}\\
+    &=&f_i^N\underbrace{\left(\sum_{j\in\text{Group}}f_j^*\right)}_{=1}-f_i^*\\
+    &=&f_i^N-f_i^*
+  \end{array}\]
+\end{proposition}
 
 \newpage
 \setcounter{section}{-1}
