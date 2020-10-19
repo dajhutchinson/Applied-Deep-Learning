@@ -253,6 +253,78 @@
   All outputs $f_i^N:=g_i^N(s_i^N)$ range between 0 and 1, while the $\sum_{i\in\text{Group}}f_i=1$.
 \end{proposition}
 
+\subsection{Types of Deep Neural Networks}
+
+\subsubsection{Fully Connected DNN}
+
+%TODO
+
+\subsubsection{Convolution DNN (CNNs)}
+
+\begin{definition}{Convolution $*$}
+  The \textit{Convolution} operation takes an input $x$ and a kernel $\omega$. The kernel is then applied to each element of the input. The actual operation depends on the set up of the input and the kernel (generally on their dimension).
+  \[ (X*\omega)(i,j)=\sum_m\sum_nX_{i+m,j+n}\omega(m,n) \]
+  The kernel is first placed st its the top-left entry overlaps the top-left entry of the input; the operation is applied; the kernel is then shifted right by one cell; this repeats until the right-side of the kernel surpasses the right-side of the input at which point is starts again but one cell lower. This means that $(X*\omega)$ is likely smaller in all dimensions that $X$.
+  \begin{center}
+    \includegraphics[width=.35\textwidth]{2dConvolution.PNG}
+  \end{center}
+\end{definition}
+
+\begin{remark}{This is actually the Cross-Correlation operation, but is what is used in practice.}
+  Convolution flips the kernel.
+\end{remark}
+
+\begin{definition}{Convolution DNN (CNNs)}
+  \textit{Convoltuon DNN} expected an $n$-dimensional grid-like topology for its input (ie an $nD$-array of data). This means operations can be applied to individual or groups of cells and this \textit{CNNs} use \textit{convolution} in place of general matrix multiplication (in at least one of its layers). The kernels used by a CNN are typically $nD$-arrays of kernels (AKA a \textit{Tensor}) which are learnt from the data (rather than hand-crafted).
+\end{definition}
+
+\begin{remark}{Attraction of CNNs}
+  CNNs have properties which distinguish them from Fully connected networks
+  \begin{enumerate}
+    \item \textit{Sparse Interactions}. In CNNs a node in one layer does not necessarily connected to every node in the next layer. This means that changing this node will not affect every node in the next layer. This is due to the grid structure of the input, where there is implicit relationships between adjacent cells/cell groups (e.g. adjacent pixels in an image). This means that nodes in later layers can have a greater \textit{receptive field of inputs}.
+    \item \textit{Parameter Sharing}. The same parameter/weight is used for more than one function in the network. This can be considered as tying two parameters together st that have the same value. We use prior knowledge to decide which nodes to tie together (rather than doing it randomly). This reduces the number of parameters which need to be optimised (which means less data is required for training). The number of reduced parameters increases for later layers. This does not affect the runtime of the forward pass, but significantly reduces the memory requirements of the model.
+    \item \textit{Equi-variant Representations}. If the input changes/shifts in a certain way (translation), then the output changes in exactly the same way. This is as a result of the previous two properties. However, CNNs are \underline{not} equivariant to rotation or scaling.
+  \end{enumerate}
+\end{remark}
+
+\begin{definition}{Pooling Operation}
+  A \textit{Pooling Operation} replaces the output of a network at a certain location with a summary of the outputs in nearby positions. This is applied after convolution and the activation function, and reduces the output size. \textit{Pooling} is typically similar to down sampling.
+  \par \textit{Max Pooling} is a popular pooling operation where the output is changed to be the maximum value within a rectangular neighbourhood.
+  \par Other pooling operations include: average pooling; weighted average pooling; $L^2$ norm etc.
+\end{definition}
+
+\begin{proposition}{Zero Padding}
+  The \textit{kernel} shrinks the dataset, which we don't want as eventually the dataset would disappear. To avoid this \textit{Zero Padding} is used. \textit{Zero Padding} adds zeros to the outside of the input st the input and output are the same size after the kernel is applied to the original input data.
+\end{proposition}
+
+\begin{proposition}{Higher-Dimensional Data}
+  When we have multiple data readings per instance (e.g. for each pixel of an RGB image) we consider each of these data fields to be a \textit{channel}. When we apply a convolution they must have the same dimension as the number of channels, and they can applied to both space \& channels. (ie a single convolution of an image is a 3D tensor). An extra dimension is added if we want to apply multiple filters/convolutions. The number of filters applied is equal to the number of channels in the next layer.
+\end{proposition}
+
+\begin{proof}{Convolution in Practice}
+  In practice we do not convolve densely (ie every pixel), rather we skip certain pixels. The number of pixels skipped is referred to as the \textit{stride} of the layer. This results in downsampled convolutions.
+\end{proof}
+
+\begin{remark}{Care needs to be taken when backpropagating CNNs with zero padding or stride greater than 1.}\end{remark}
+
+\begin{remark}{Typically CNNs start with convolution layers and then end with a couple of fully connected layers.}\end{remark}
+
+\begin{remark}{Training CNNs}
+  \begin{itemize}
+    \item The most expensive part of training CNNs is training the convolutional layers. The fully-connected layers at the end are relatively inexpensive as they have a small number of features.
+    \item When performing gradient descent, every gradient step requires a complete run of feed-forward propagation and backward propagation through the entire network.
+  \end{itemize}
+\end{remark}
+
+\begin{proposition}{Residual Networks (ResNet)}
+  \textit{ResNets} are a new innovation in CNNs where filters are applied to the input and then mergered back (by addition) with the input before be passed to the activation function. This leads to faster convergence by searching for weights which deviate only slightly from the identity. This allows for deeper networks.
+  \begin{center}
+    \includegraphics[width=.35\textwidth]{ResNet.PNG}
+  \end{center}
+\end{proposition}
+
+\subsubsection{Recurrent DNN}
+
 \subsection{Problems}
 
 \subsubsection{Overfitting}
