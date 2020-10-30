@@ -773,6 +773,41 @@
   \end{array}\]
 \end{proposition}
 
+\section{Implementation}
+
+\begin{remark}{Tuning}
+  When tuning hyper-parameters we want to maximise test accuracy (not training accuracy) and minimise computational load (ie how long the execution takes)
+\end{remark}
+
+\begin{proposition}{Order of Hyper-parameter Tuning}
+  \begin{enumerate}
+    \item Learning Rate
+    \item Batch Size
+  \end{enumerate}
+\end{proposition}
+
+\begin{remark}{Learning Rate}
+  When tuning the \textit{Learning Rate} there is a trade-off between speed (not too small) and actually converging (not too big).
+\end{remark}
+
+\begin{remark}{Batch Size}
+  \textit{Batch Size} is the number of examples propagated through the network at any one time. The risk with smaller batch sizes is that they do not sufficiently represent the entire dataset, so the parameter updates overfit to that batch. The risk with larger batch sizes result in fewer weight updates as fewer epochs are completed
+  \par Larger batch sizes generally make the execution quicker, due to few passes being completed. Smaller batches are better able to utilise a GPU's parallel processing capability.
+\end{remark}
+
+\begin{definition}{Batch Normalisation}
+  \textit{Batch Normalisation} normalises layer inputs so the distribution of these inputs does not vary while training and adjusting parameters. This speeds up convergence by changing each input distribution to have zero mean and unit variance. The equation used is
+  \[ \hat{x}_{i,c,x,y}=\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}} \]
+  where $x_{i,c,x,y}$ is an output from the previous layer, $\hat{x}_{i,c,x,y}$ is the transformed value which will be used as an input, $i,c,x,y$ define the batch,channel,width \& height position of the input, $\mu_c$ and $\sigma^2_c$ are the mean and variance for each training batch; $\epsilon$ is a small constant for numerical stability (ie when $\sigma^2_c$ is 0).
+  \par \textit{Batch Normalisation} limits the functions a neural network can represent (bad!). To restore this representation power we learn two new parameters per channel $\gamma_c$ and $\beta_c$. Giving
+  \[ \hat{x}_{i,c,x,y}=\gamma_c\cdot\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}}+\beta_c \]
+  \textit{Batch Normalisation} is typically added after each convolution or fully connected layer, and before the activation function.
+\end{definition}
+
+\begin{remark}{Other Ways to Optimise}
+  Momentum can be added to SGD. This adds another hyper-parameter to be tuned.
+\end{remark}
+
 \newpage
 \setcounter{section}{-1}
 \section{Reference}
