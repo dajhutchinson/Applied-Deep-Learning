@@ -57,8 +57,8 @@ class MLP(nn.Module):
                  activation_fn:Callable[[torch.Tensor],torch.Tensor]=f.relu):
         super().__init__()
         self.l1=nn.Linear(input_size,hidden_layer_size)  # first hidden layer
-        self.l2=nn.Linear(hidden_layer_size,output_size) # second hidden layer
         self.activation_fn=activation_fn
+        self.l2=nn.Linear(hidden_layer_size,output_size) # second hidden layer
 
     # forward pass (make prediction)
     def forward(self,inputs:torch.Tensor) -> torch.Tensor:
