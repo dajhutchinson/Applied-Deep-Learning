@@ -249,6 +249,7 @@
     \textit{Dropout} is a training procedure which builds on the idea that \textit{Neural Networks} are an ensemble of sub-networks (See \texttt{Proposition 1.1}) and seeks to allow each sub-network to train somewhat independently.
     \par \textit{Dropout} does this by, each training loop, choosing a random set of nodes and setting the inbound weight to each of these nodes to 0. This effectively immobilises this set of nodes during this training loop
     \par During validation all weights are turned on, so the output of the network is significantly greater. To combat this weights are set to $pW$ in order to reduce their magnitude (where $p$ is the probability of a particular node being immobilised in a particular training loop).
+    \par \textit{Dropout} decreases training accuracy but should help the model generalise. Without any \textit{Dropout} it is possible for a model to perfectly classify the training data. Generally $p=.5$ is a good balance.
   \end{definition}
 
   \begin{definition}{DropConnect}
@@ -388,8 +389,8 @@
     \[  g_j^N(s_j^N):=\frac{e^{s_j^N}}{\displaystyle\sum_{i\in\text{Group}}e^{s_i^N}} \]
     This has gradients
     \[\begin{array}{rcl}
-      g'_j^N(s_j^N)&=&f_j^N(1-f_j^n)\\
-      g'_j^N(s_{i}^N)&=&-f_j^Nf_i^N\quad\text{for }i\neq j
+      {g_j^N}'(s_j^N)&=&f_j^N(1-f_j^n)\\
+      {g_j^N}'(s_{i}^N)&=&-f_j^Nf_i^N\quad\text{for }i\neq j
     \end{array}\]
   \end{proposition}
 
@@ -521,16 +522,16 @@ TODO
       \[ \delta_j^{N+1}:=\frac{\partial J}{\partial f_j^N} \]
 
       \item Compute the error derivative $\delta_j^N$ of the cost function wrt the signals of the last hidden layer $s_j^N$.
-      \[ \delta_j^N:=\frac{\partial J}{\partial s_j^N}=g_j^N'(s_j^N)\cdot\delta_j^{N+1} \]
+      \[ \delta_j^N:=\frac{\partial J}{\partial s_j^N}={g_j^N}'(s_j^N)\cdot\delta_j^{N+1} \]
 
       \item Layer-by-layer: Calculate the \textit{error derivatives} $\delta_i^{l-1}$ of the cost function wrt the signal $s_j^{l-1}$  of each neuron in the next layer, using the error derivatives $\delta_j^l$ of the layer above.
-      \[ \delta_i^{l-1}:=\frac{\partial J}{\partial s_i^{l-1}}=g_i^{l-1}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l \]
+      \[ \delta_i^{l-1}:=\frac{\partial J}{\partial s_i^{l-1}}={g_i^{l-1}}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l \]
       where $d(l)$ is the width of the $l^{th}$ layer.
 
       \item Calculate the error derivates $\frac{\partial J}{\partial w_{ik}^l}$ wrt to the weights of each neuron $w_{ik}^l$ using the error derivatives of the neuron activities $\delta_j^l$.
       \[ \frac{\partial J}{\partial w_{ij}^l}:=\frac{\partial J}{\partial s_j^l}\frac{\partial s_j^l}{\partial w_{ij}^l}=\delta_j^lf_i^{l-1} \]
 
-      \item Update all weights $w_{ij}^l$ based on the deltas and neuron activities using the \mathit{Gradient Descent} learning rule
+      \item Update all weights $w_{ij}^l$ based on the deltas and neuron activities using the \textit{Gradient Descent} learning rule
       \[ w_{ij}^l\leftarrow w_{ij}^l-\eta f_i^{l-1}\delta_j^l\]
       where $\eta$ is a pre-defined learning rate.
     \end{enumerate}
@@ -540,9 +541,9 @@ TODO
     \everymath={\displaystyle}
     \[\begin{array}{rrl}
       \delta_i^{l-1}&:=&\frac{\partial J}{\partial s_i^{l-1}}\\
-      &=&\sum_{j=1}^{d(l)}\underbrace{\frac{\partial J}{\partial s_j^l}}_{\delta_j^l} \underbrace{\frac{\partial s_j^l}{\partial f_j^{l-1}}}_{w_{ij}^l} \underbrace{\frac{\partial f_i^{l-1}}{\partial s_i^{l-1}}}_{g^{l-1}_i'(s_i^{l-1})}\\
-      &=&\sum_{j=1}^{d(l)}\delta_j^lw_{ij}^lg_i^{l-1}'(s_i^{l-1})\\
-      &=&\underbrace{g_i^{l-1}'(s_i^{l-1})}_\text{independent}\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l
+      &=&\sum_{j=1}^{d(l)}\underbrace{\frac{\partial J}{\partial s_j^l}}_{\delta_j^l} \underbrace{\frac{\partial s_j^l}{\partial f_j^{l-1}}}_{w_{ij}^l} \underbrace{\frac{\partial f_i^{l-1}}{\partial s_i^{l-1}}}_{{g^{l-1}_i}'(s_i^{l-1})}\\
+      &=&\sum_{j=1}^{d(l)}\delta_j^lw_{ij}^l{g_i^{l-1}}'(s_i^{l-1})\\
+      &=&\underbrace{{g_i^{l-1}}'(s_i^{l-1})}_\text{independent}\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l
       \end{array}\]
   \end{proof}
 
@@ -599,7 +600,7 @@ TODO
       \item Initialise all weights $W$ randomly.
       \item \texttt{for} $k=0,\dots,\tau$ \texttt{do}:
       \begin{enumerate}
-        \item $\eta_k:=\left(1-\frac{k}\tau)\eta_0+\frac{k}\tau\eta_\tau$
+        \item $\eta_k:=\left(1-\frac{k}\tau\right)\eta_0+\frac{k}\tau\eta_\tau$
         \item \texttt{for each training sample $(x,f^*)$ do}:
         \begin{enumerate}
           \item Forward propagate to calculate network output values.
@@ -736,7 +737,7 @@ TODO
     \begin{itemize}
       \item[\textit{Identity Distance}] $L(x,x^*):=|x-x^*|$
       \item[\textit{Absolute Distance}] $L(x,x^*):=(x-x^*)^2$
-      \item[\textit{Quadratic Distance}] $L(x,x^*):=\identity\{x\equiv x^*\}=\begin{cases}1&\text{if }x\equiv x^*\\0&\text{otherwise} \end{cases}$
+      \item[\textit{Quadratic Distance}] $L(x,x^*):=\indexed\{x\equiv x^*\}=\begin{cases}1&\text{if }x\equiv x^*\\0&\text{otherwise} \end{cases}$
     \end{itemize}
   \end{proposition}
 
@@ -781,6 +782,115 @@ TODO
     \end{array}\]
   \end{proof}
 
+\section{Training}
+
+  \begin{remark}{Training a Model}
+    Once an architecture for an ANN is decided, there are still decisions to be made about how to traing the model. This decisions generally trade-off between: Training Accuracy, Testing Accuracy, and Computational Resources.
+  \end{remark}
+
+  \begin{proposition}{Testing \& Training Data Sets}
+    When training a model on a dataset $D$ we randomly partition the $D$ in two, creating a: training dataset ($\sim75\%$ of $D$); and, a testing dataset ($\sim25\%$ of $D$).
+    \par The training dataset is used to fit the model (ie learn model parameters) and the testing dataset is used to test the generalised predictive power of the fitted model. It is important that the testing dataset remains unseen during model training.
+  \end{proposition}
+
+  \begin{definition}{Model Checkpointing}
+    Some models take a long time (weeks) to train. \textit{Model Checkpointing} is the practice of periodically saving model parameters (ie weights) so that if the script crashes then training can be resumed. Further, the model can be backtracked to a version which had better generalised performance (avoiding overfitting).
+    \par A \textit{Model Checkpoint} typically only contains parameter values and nothing to describe the computation/architecture of the model, so is only useful with the source code for this model.
+  \end{definition}
+
+\subsection{Metrics}
+
+  \begin{definition}{Accuracy}
+    \textit{Accuracy} is a metric of how good a model is at classification. \textit{Accuracy} is the proportion of a data set which are correct classified by the model (generally stated as a percentage).
+    \par For a dataset $\{(x_1,y_1),\dots,(x_N,y_N)\}$ and model $f(\cdot)$, \textit{Accuracy} is defined as
+    \[ \text{Accuracy}:=\frac1N\sum_{i=1}^N\indexed\{y_i\equiv f(x_i)\} \]
+  \end{definition}
+
+  \begin{definition}{Per Class Accuracy}
+    \textit{Per Class Accuracy} is the same as the \textit{Accuracy} metric, except it considers each class individually. This allows for more nuanced understanding of our models performance
+    \par For a dataset $\{(x_1,y_1),\dots,(x_N,y_N)\}$ and model $f(\cdot)$, \textit{Per Class Accuracy} for class $c$ is defined as
+    \[ \text{Accuracy}_c:=\frac{\sum_{i=1}^N\indexed\{y_i\equiv c\ \&\ f(x_i)\equiv c\}}{\sum_{i=1}^N\indexed\{y_i\equiv c\}} \]
+  \end{definition}
+
+\subsection{Data Augmentation}
+
+  \begin{definition}{Common Transformation}
+    Here is a description of several transformation which can be applied to data
+    \begin{itemize}
+      \item \textit{Brightness} - Making an image uniformly brighter or darker. There can be an issue if values are clipped at 0 or 255.
+      \item \textit{Colour Variation} - Change the colour profile of an image. Easily done by swapping channel values or using grayscale.
+      \item \textit{Cropping/Scaling} - Removing parts of the image. Be careful to not cut the object out of the image.
+      \item \textit{Flipping/Rotating} - An image can be flipped or rotated on either of its axes and keep its training label.
+      \item \textit{Occlusion} - Obstructing part of an image.
+      \item \textit{Padding} - Pad the image with random noise. Learns to classify regardless of position.
+      \item \textit{Random Noise} - Randomly vary the value of each pixel in an image. Generally only small variations otherwise the underlying image is lost.
+      \item \textit{Translation} - Shifting an image and adding random noise to new empty space.
+      \item \textit{Viewpoint} - Minor geometric transformation to an object
+    \end{itemize}
+    See \texttt{torchvision.transforms}
+  \end{definition}
+
+  \begin{definition}{Invariant Transformations}
+    An \textit{Invariant Transformation} of a piece of data, is a transformation which does not invalidate the label applied to that data. Which transformations are invariant depends on the type of data being transformed and the problem which is being tackled.
+    \par Here is a table of common problems and some \textit{Invariant Transformations} for them.
+    \begin{center}
+      \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Problem}&\textbf{Invariant To}\\
+        \hline
+        Object Recognition& Translation, Rotation, Scaling/Cropping, Viewpoint\\
+        Number Plate Recognition & Translation, Rotation\\
+        Action Recognition & Translation, Rotation, Scaling/Cropping, Viewpoint, Speed\\
+        \hline
+      \end{tabular}
+    \end{center}
+  \end{definition}
+
+  \begin{definition}{Data Augmentation}
+    \textit{Data Augmentation} is the process of applying \textit{Invariant Transformations} to training data (It is common to chain transformations). This increases the size of the training set without having to actually collect more data (which is often expensive). \textit{Data Augmentation} can be done either \textit{Online} or \textit{Offline}
+  \end{definition}
+
+  \begin{proposition}{Online v Offline Data Augmentation}
+    \par In \textit{Offline Augmentation} data is transform and saved before then training on the larger data set. \textit{Offline Augmentation} is typically used when transformation operations are expensive.
+    \par In \textit{Online Augmentation} whenever a new training sample is read into the training process, a transformation is applied with some given probability. \textit{Online Augmentation} leads to greater diversity as a sample is likely to be different each time it is used.
+  \end{proposition}
+
+\subsection{Tuning}
+
+  \begin{remark}{Parameter Initialisation}
+    The \textit{Cost Function} of a DNN is non-convex, meaning the outcome of optimisation algorithms for the cost function depend on the initial parameter values.
+    \par Random initialisations are easy, but in practice it is better to start with a pre-trained model from a relevant problem which has larger data sets. (For images \textit{ImageNet} is a common pre-trained model.)
+  \end{remark}
+
+  \begin{figure}[H]
+    \begin{center}
+      \includegraphics[width=.35\textwidth]{DifferentLearningRates.PNG}
+    \end{center}
+    \caption{ Relationship between learning rate and training accuracy after each training epoch. }
+    \label{fig:Different_LRs}
+  \end{figure}
+
+  \begin{proposition}{Learning Rate}
+    \textit{Learning Rate} is the most important hyper-parameter to tune as it affects the rate of convergence. If the \textit{Learning Rate} is too \underline{small} then convergence will take a long time to occur, but if the \textit{Learning Rate} is too \underline{high} then convergence may never occur as the steps taken are too large. \texttt{Figure \ref{fig:Different_LRs}} shows the relationship between different learning rates and training accuracy after each epoch.
+    \par \textit{Batch Normalisation} allows for greater \textit{Learning Rates} to be used.
+  \end{proposition}
+
+  \begin{proposition}{Batch Size}
+    \textit{Batch Size} is the number of training datapoints propagated through the network at any one time, with members of each batch chosen randomly.
+    \par Smaller batches are better able to utilise a GPU's parallel processing capability. Although, they likely do not sufficiently represent the gradient of the entire dataset, so the parameter updates overfit to that batch.
+    \par Larger batches generally make execution quicker (due to fewer passes) and training accuracy greater (as they better represent the gradient of the whole training set). However, larger batches result in fewer weight updates due to the fewer passes and the increases in training accuracy are not linear with batch size.
+    \par Batch size is often limited by the GPU's memory capacity and typically are powers of 2. For small-sized data batches of 32-256 are common, for large-sized data batches of 8-16 are common.
+  \end{proposition}
+
+  \begin{definition}{Batch Normalisation}
+    \textit{Batch Normalisation} normalises layer inputs so the distribution of these inputs does not vary while training and adjusting parameters. This speeds up convergence by changing each input distribution to have zero mean and unit variance. The equation used is
+    \[ \hat{x}_{i,c,x,y}=\gamma_c\cdot\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}}+\beta_c \]
+    where $x_{i,c,x,y}$ is the input to the layer, $\hat{x}_{i,c,x,y}$ is the transformed value which will be used as an input, $i,c,x,y$ define the batch,channel,width \& height position of the input, $\mu_c$ and $\sigma^2_c$ are the mean and variance for each training batch; $\epsilon$ is a small constant for numerical stability (ie when $\sigma^2_c$ is 0).
+    \par $\gamma_c$ and $\beta_c$ are introduced to ensure the ANN can still represent all mathematical functions.
+    \textit{Batch Normalisation} is typically added after each convolution or fully connected layer, and before the activation function. \textit{Batch Normalisation} should not be applied to the output layer for classification.
+    \par \textit{Batch Normalisation} allows for greater \textit{Learning Rates} to be used.
+  \end{definition}
+
 \newpage
 \setcounter{section}{-1}
 \section{Reference}
@@ -812,7 +922,7 @@ TODO
   \begin{figure}[H]
     \centering
     \subfloat[Equations]{
-      \[\begin{array}{rclc}
+      \[\begin{array}{rcl}
         a&=&b\times c\\
         b&=&d+e\\
         c&=&e+2\\

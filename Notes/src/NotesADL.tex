@@ -255,10 +255,6 @@
 
 \subsection{Types of Deep Neural Networks}
 
-\subsubsection{Fully Connected DNN}
-
-%TODO
-
 \subsubsection{Convolution DNN (CNNs)}
 
 \begin{definition}{Convolution $*$}
@@ -773,38 +769,107 @@
 
 \section{Implementation}
 
-\begin{remark}{Tuning}
-  When tuning hyper-parameters we want to maximise test accuracy (not training accuracy) and minimise computational load (ie how long the execution takes)
+\subsection{Training}
+
+\begin{remark}{This Section}
+  In this subsection I discuss some ways to avoid overfitting during training.
 \end{remark}
 
-\begin{proposition}{Order of Hyper-parameter Tuning}
-  \begin{enumerate}
-    \item Learning Rate
-    \item Batch Size
-  \end{enumerate}
-\end{proposition}
+\begin{remark}{Tuning}
+  When tuning hyper-parameters we are seeking to understand the relationship between the value of the hyperparameter and the following quantities
+  \begin{itemize}
+    \item Training Accuracy \& Training Loss;
+    \item Testing Accuracy; and,
+    \item Computational Resources (e.g. time and memory)
+  \end{itemize}
+\end{remark}
 
-\begin{remark}{Learning Rate}
+\begin{remark}{Learning Rate is the most important hyper-parameter to tune}
   When tuning the \textit{Learning Rate} there is a trade-off between speed (not too small) and actually converging (not too big).
+  \begin{center}
+    \includegraphics[width=.35\textwidth]{LearningRate.PNG}
+    \includegraphics[width=.35\textwidth]{DifferentLearningRates.PNG}
+  \end{center}
+  The plot on the left shows a typical relationship between \textit{Learning Rate} value and training accuracy. The plot on the right shows how different learning rates affect the training error after each training epoch.
+  \par \textit{Batch Normalisation} allows for greater learning rates to be used.
 \end{remark}
 
 \begin{remark}{Batch Size}
-  \textit{Batch Size} is the number of examples propagated through the network at any one time. The risk with smaller batch sizes is that they do not sufficiently represent the entire dataset, so the parameter updates overfit to that batch. The risk with larger batch sizes result in fewer weight updates as fewer epochs are completed
-  \par Larger batch sizes generally make the execution quicker, due to few passes being completed. Smaller batches are better able to utilise a GPU's parallel processing capability.
+  \textit{Batch Size} is the number of examples propagated through the network at any one time, with members of each batch chosen randomly.
+  \par Smaller batches are better able to utilise a GPU's parallel processing capability. The risk with smaller batch sizes is that they do not sufficiently represent the gradient of the entire dataset, so the parameter updates overfit to that batch. Further, very small batches make the gradient too noisy to be useful.
+  \par Larger batch sizes generally make the execution quicker, due to few passes being completed. The risk with larger batch sizes is they result in fewer weight updates as fewer epochs are completed, and the increases in training accuracy are not linear with the size.
+  \par Batch size is often limited by the GPU's memory capacity and typically are powers of 2. For small-sized data batches of 32-256 are common, for large-sized data batches of 8-16 are common.
 \end{remark}
 
 \begin{definition}{Batch Normalisation}
   \textit{Batch Normalisation} normalises layer inputs so the distribution of these inputs does not vary while training and adjusting parameters. This speeds up convergence by changing each input distribution to have zero mean and unit variance. The equation used is
   \[ \hat{x}_{i,c,x,y}=\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}} \]
-  where $x_{i,c,x,y}$ is an output from the previous layer, $\hat{x}_{i,c,x,y}$ is the transformed value which will be used as an input, $i,c,x,y$ define the batch,channel,width \& height position of the input, $\mu_c$ and $\sigma^2_c$ are the mean and variance for each training batch; $\epsilon$ is a small constant for numerical stability (ie when $\sigma^2_c$ is 0).
+  where $x_{i,c,x,y}$ is the input to the layer, $\hat{x}_{i,c,x,y}$ is the transformed value which will be used as an input, $i,c,x,y$ define the batch,channel,width \& height position of the input, $\mu_c$ and $\sigma^2_c$ are the mean and variance for each training batch; $\epsilon$ is a small constant for numerical stability (ie when $\sigma^2_c$ is 0).
   \par \textit{Batch Normalisation} limits the functions a neural network can represent (bad!). To restore this representation power we learn two new parameters per channel $\gamma_c$ and $\beta_c$. Giving
   \[ \hat{x}_{i,c,x,y}=\gamma_c\cdot\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}}+\beta_c \]
-  \textit{Batch Normalisation} is typically added after each convolution or fully connected layer, and before the activation function.
+  \par \textit{Batch Normalisation} allows for greater learning rates to be used.
+  \textit{Batch Normalisation} is typically added after each convolution or fully connected layer, and before the activation function. \textit{Batch Normalisation} should not be applied to the output layer for classification.
 \end{definition}
+
+\begin{remark}{Parameter Initialisation}
+  Since the cost function of a DNN is non-convex, optimisation algorithms on the cost function depend on the initial parameters.
+  \par Random initialisations are easy, but in practice it is better to start with a pre-trained model from a relevant problem which has larger data sets. (For images \textit{ImageNet} is a common pre-trained model.)
+\end{remark}
 
 \begin{remark}{Other Ways to Optimise}
   Momentum can be added to SGD. This adds another hyper-parameter to be tuned.
 \end{remark}
+
+\begin{proposition}{Per-Class Accuracy}
+  \textit{Per-Class Accuracy} is an extension of the \textit{Accuracy} measurement which calculates the proportion of correct classifications for each class.
+  \[ \text{Acc}_C=\frac{\sum_i[\hat{y}_i==y_i==C]}{\sum_i[y_i==C]} \]
+\end{proposition}
+
+\begin{remark}{Dropout}
+  \textit{Dropout} is a \textit{regularisation} technique which prevents overfitting by randomly removing inputs to a layer. This means the layer has to rely on a small combination of inputs for detection. \textit{Dropout} decreases training accuracy but should help the model generalise.
+  \par Without any \textit{dropout} it is possible for a model to perfectly classify the training data. Generally $p=.5$ is a good balance.
+\end{remark}
+
+\begin{proposition}{Model Checkpointing}
+  \textit{Model Checkpointing} is the process of periodically saving model parameters so that if the script crashes then training can be resumed. Further, we can evaluate the trained network separately from the training process itself. Note that a \textit{Checkpoint} typically only contains the parameter values and does not have a description of the computation the model is performing (thus it is only useful with the source code of the model being saved).
+  \par \textit{Checkpointing} is particularly important in models which take a long time to train.
+\end{proposition}
+
+\subsection{Data Augmentation}
+
+\begin{proposition}{Invariant Transformation}
+  The following is a table of transformation which can be applied to data for different problem types without affect the training label
+  \begin{center}
+    \begin{tabular}{|l|l|}
+      \hline
+      \textbf{Problem}&\textbf{Invariant To}\\
+      \hline
+      Object Recognition& Translation, Rotation, Scaling/Cropping, Viewpoint\\
+      Number Plate Recognition & Translation, Rotation\\
+      Action Recognition & Translation, Rotation, Scaling/Cropping, Viewpoint, Speed\\
+      \hline
+    \end{tabular}
+  \end{center}
+  Other common invariances include: Random Noise, Occulusion, Lighting Conditions, Colour Variations.
+\end{proposition}
+
+\begin{definition}{Data Augmentation}
+  \textit{Data Augmentation} is the process of applying transform to existing data in order to increase the size of the training validation set. The transformation is done in such a way that the training label is invariant (ie it is not invalidated). This can be done either \textit{online} or \textit{offline}.
+  \par \textit{Offline Augmentation} involves transforming the data and saving it before then training on the larger data set. \textit{Offline Augmentation} is typically used when transformation operations are expensive.
+  \par \textit{Online Augmentation} involves starting the algorithm with unaltered data, but when each new training sample is read in a transformation is applied with some given probability. \textit{Online Augmentation} leads to greater diversity as a sample is likely to be different each time it is used.
+  \par It is common to chain transformations
+\end{definition}
+
+\begin{proposition}{Popular Augmentations}
+  See \texttt{torchvision.transforms}
+  \begin{itemize}
+    \item \textit{Flipping/Rotating} - An image can be flipped or rotated on either of its axes and keep its training label.
+    \item \textit{Brightness} - Making an image uniformly brighter or darker. There can be an issue if values are clipped at 0 or 255.
+    \item \textit{Scaling/Cropping} - Removing parts of the image. Be careful to not cut the object out of the image.
+    \item \textit{Padding} - Pad the image with random noise. Learns to classify regardless of position.
+    \item \textit{Viewpoint} - Minor geometric transformation to an object
+  \end{itemize}
+\end{proposition}
 
 \newpage
 \setcounter{section}{-1}
