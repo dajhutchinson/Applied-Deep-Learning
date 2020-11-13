@@ -82,7 +82,7 @@ else:
 
 
 def main(args):
-    transform=transforms.ToTensor()
+    transform=transforms.ToTensor() # convert images from PIL.Image.Image to torch.tensor
     args.dataset_root.mkdir(parents=True, exist_ok=True)
     train_dataset=torchvision.datasets.CIFAR10(
         args.dataset_root, train=True, download=True, transform=transform

@@ -70,6 +70,12 @@ parser.add_argument(
 
 parser.add_argument("--sgd-momentum", default=0, type=float)
 
+parser.add_argument("--data-aug-hflip", action="store_true")
+
+parser.add_argument("--data-aug-brightness", default=0, type=float)
+
+parser.add_argument("--dropout", default=0, type=float)
+
 # shape of image being classified
 class ImageShape(NamedTuple):
     height: int
@@ -84,7 +90,20 @@ else:
 
 
 def main(args):
-    transform=transforms.ToTensor() # convert images from PIL.Image.Image to torch.tensor
+    if (args.data_aug_hflip): # .5 chance to flip horizontally (then transform to tensor)
+        print("Flip is on")
+        transform=torchvision.transforms.Compose([
+            torchvision.transforms.RandomHorizontalFlip(),
+            torchvision.transforms.ColorJitter(brightness=args.data_aug_brightness), # vary brighness
+            torchvision.transforms.ToTensor(),
+        ])
+    else: # convert images from PIL.Image.Image to torch.tensor
+        print("Flip is off")
+        transform=torchvision.transforms.Compose([
+            torchvision.transforms.ColorJitter(brightness=args.data_aug_brightness), # vary brighness
+            torchvision.transforms.ToTensor()
+        ])
+
     args.dataset_root.mkdir(parents=True, exist_ok=True)
     train_dataset=torchvision.datasets.CIFAR10(
         args.dataset_root, train=True, download=True, transform=transform
@@ -107,7 +126,7 @@ def main(args):
         pin_memory=True,
     )
 
-    model=CNN(height=32, width=32, channels=3, class_count=10)
+    model=CNN(height=32, width=32, channels=3, class_count=10, dropout=args.dropout)
 
     ## TASK 8: Redefine the criterion to be softmax cross entropy
     criterion=nn.CrossEntropyLoss()
@@ -138,7 +157,7 @@ def main(args):
 class CNN(nn.Module):
 
 
-    def __init__(self, height: int, width: int, channels: int, class_count: int):
+    def __init__(self, height: int, width: int, channels: int, class_count: int, dropout:float):
         super().__init__()
         self.input_shape=ImageShape(height=height, width=width, channels=channels)
         self.class_count=class_count
@@ -166,6 +185,8 @@ class CNN(nn.Module):
         self.initialise_layer(self.fc2)
         self.batchNorm3=nn.BatchNorm1d(10)
 
+        self.dropout=nn.Dropout(p=dropout)
+
     # forward pass
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         x=F.relu(self.conv1(images)) # apply ReLU activation function to 1st hidden layer
@@ -180,11 +201,11 @@ class CNN(nn.Module):
         ##         (batch_size, 4096)
         x=torch.flatten(x,start_dim=1)
         ## TASK 5-2: Pass x through the first fully connected layer
-        x=self.fc1(x)
+        x=self.fc1(self.dropout(x))
         x=self.batchNorm2(x)
         x=F.relu(x)
         ## TASK 6-2: Pass x through the last fully connected layer
-        x=self.fc2(x)
+        x=self.fc2(self.dropout(x))
         x=self.batchNorm3(x)
         return x
 
@@ -315,6 +336,7 @@ class Trainer:
         accuracy=compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
+        print(compute_per_class_accuracy(np.array(results["labels"]), np.array(results["preds"])))
         average_loss=total_loss / len(self.val_loader)
 
         self.summary_writer.add_scalars(
@@ -342,6 +364,18 @@ def compute_accuracy(
     return float((labels == preds).sum()) / len(labels)
 
 
+def compute_per_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]):
+    """
+    Args:
+        labels: ``(batch_size, class_count)`` tensor or array containing example labels
+        preds: ``(batch_size, class_count)`` tensor or array containing model prediction
+    """
+    classes=["airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"]
+    per_class_accuracy={}
+    for i,c in enumerate(classes):
+        per_class_accuracy[c]=float(((labels==i) & (labels==preds)).sum()) / (labels==i).sum()
+    return per_class_accuracy
+
 def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
     """Get a unique directory that hasn't been logged to before for use with a TB
     SummaryWriter.
@@ -352,7 +386,16 @@ def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
         from getting logged to the same TB log directory (which you can't easily
         untangle in TB).
     """
-    tb_log_dir_prefix=f'CNN_bn_bs={args.batch_size}_lr={args.learning_rate}_momentum=0.9_run_'
+    tb_log_dir_prefix = (
+      f"CNN_bn_"
+      f"dropout={args.dropout}_"
+      f"bs={args.batch_size}_"
+      f"lr={args.learning_rate}_"
+      f"momentum=0.9_"
+      f"brightness={args.data_aug_brightness}_" +
+      ("hflip_" if args.data_aug_hflip else "") +
+      f"run_"
+      )
     i=0
     while i < 1000:
         tb_log_dir=args.log_dir / (tb_log_dir_prefix + str(i))
