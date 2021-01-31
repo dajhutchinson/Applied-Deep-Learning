@@ -98,7 +98,7 @@
   \end{proposition}
 
   \begin{remark}{Learning Rate $\eta$}
-    The \textit{Learning Rate} $\nu$ defines how big the steps learning rule makes towards a minimum. The \textit{Learning Rate} needs to be tuned as too small a value will mean it takes a long time (and a lot of data) to reach a minimum, whereas too great a value means the minimum can be overstepped and convergence is unlikely.
+    The \textit{Learning Rate} $\eta$ defines how big the steps learning rule makes towards a minimum. The \textit{Learning Rate} needs to be tuned as too small a value will mean it takes a long time (and a lot of data) to reach a minimum, whereas too great a value means the minimum can be overstepped and convergence is unlikely.
   \end{remark}
 
   \begin{proposition}{Training Process for a Single-Layer Perceptron}
@@ -126,13 +126,24 @@
       \item The \textit{Sign} activation function binarily assigns values depend on whether they are positive or negative. \textit{Sign} is not differentiable.
       \[ g_{sign}(x):=\begin{cases}1&x\geq0\\-1&x<0\end{cases}=\frac{x}{|x|} \]
 
-      \item The \textit{Rectifying Linear Unit} (ReLU) function is a differentiable activation function.
+      \item $\tanh$ function is a differentiable activation-function\footnote{$\tanh$ is not as popular as \textit{ReLU} as it is saturating (output is bounded above and below) meaning early layers learn slowly.}
       \[\begin{array}{rcl}
-          g_{ReLU}(s)&:=&\max\{0,s\}\\
-          g_{ReLU}'(s)&:=&\begin{cases}1&\text{if }s\geq0\\0&\text{otherwise}\end{cases}
+          \tanh(x)&:=&\dfrac{e^{2x}-1}{e^{2x}+1}\\
+          \tanh'(x)&:=&1-\tanh(x)^2
       \end{array}\]
+
+      \item The \textit{Rectifying Linear Unit} (ReLU) function is a differentiable non-linear activation function.
+      \[\begin{array}{rcl}
+          g_{ReLU}(x)&:=&\max\{0,x\}\\
+          g_{ReLU}'(x)&:=&\begin{cases}1&\text{if }s\geq0\\0&\text{otherwise}\end{cases}
+      \end{array}\]
+
     \end{itemize}
   \end{proposition}
+
+  \begin{remark}{Activation Functions should be Non-Linear}
+    If an \textit{Activation Function} is \underline{not} non-linear then the deep network can be represented by a shallow network, with a single hidden layer, \underline{and} the network would not be able to model non-linear data, which is not desirable.
+  \end{remark}
 
   \begin{remark}{Limitation of ReLU}
     Using \textit{ReLU} introduces a problem of \textit{Dying Neurons} where a large gradient flowing through \textit{ReLU} may force the neuron never to activate again (as it pushes the incoming signal to 0). This is bad, as these neurons will no longer contribute to learning anymore.
@@ -207,7 +218,7 @@
     \begin{itemize}
       \item \textit{Hierarchical Automatic Modularisation}. A deep neural network has many layers, and the information of each layer is available to the succeeding layer. This means each layer can be considered to extract slightly more precise features (e.g. pixel colours $\to$ edges $\to$ corners $\to$ object parts $\to$ object class). These modular layers are generated automatically during training.
       \item \textit{Practical Performance}. Greater depth gives greater performance than greater width. Note that large networks (either by width or depth) require more training time and larger data sets.
-      \item \textit{The Oscillation Argument}. There are functions $f$ that can be represented by a \underline{deep} ReLU network with a polynomial number of neurons, whereas a \underline{shallow} network would require exponentially many units.
+      \item \textit{The Oscillation Argument}. There are functions $f$ that can be represented by a \underline{deep} ReLU network with a polynomial number\footnote{Polynomial wrt input width.} of neurons, whereas a \underline{shallow} network would require exponentially many units.
     \end{itemize}
   \end{remark}
 
@@ -225,6 +236,10 @@
     \par \texttt{Figure \ref{fig_Overfitting}} provides an example of how \textit{Overfitting} can be identified graphically as the distance between training and testing loss increases with each time step, and the training loss converges to zero. Ideally the lines for training and testing loss would be fairly similar.
     \par \textit{Overfitting} can be combatted by: Using more data; Using data which represents the full sample space better; And, strategic sampling of data.
   \end{proposition}
+
+  \begin{remark}{Characterisation of Overfitting in a DNN}
+    \textit{Overfitting} in a \textit{DNN} is characterised by weight values being very large. This is due to large weights making the network unstable, as small changes in the input (inc. noise) will have a large affect on the output.
+  \end{remark}
 
   \begin{definition}{Data Augmentation}
     Collecting data can be expensive and hard. \textit{Data Augmentation} is a set of techniques to increase the available set of data, without having to collect more data, by slightly modifying already observed data. For images this may involve: cropping; translating; adding noise; shifting the hue...
@@ -282,7 +297,7 @@
   \begin{definition}{Fully Connected DNN}
     A \textit{Fully Connected DNN} is an \textit{Artificial Neural Network} where each node in a layer takes an input from \underline{every} node in the preceding layer and passes its output to \underline{every} node in the next layer.
     \par The output of each perceptron is the weighted sum of its inputs, passed through an activation function.
-    \par Below is a diagram of a MLP of \textit{depth} $N$ (i.e. there are $N$ layers of computation)
+    \par Below is a diagram of a MLP\footnote{\textit{Fully Connected DNNs} are also known as \textit{Multi-Layer Perceptrons}} of \textit{depth} $N$ (i.e. there are $N$ layers of computation)
     \begin{center}\begin{tikzpicture}[  ]
       % nodes
       \node         at (0,1)        {$\overbrace{}^{\text{input layer}}$};
@@ -380,14 +395,14 @@
     \par For each consecutive pair of layers $\pmb{f}^i,\pmb{f}^j$ (of widths $n_i,n_j$ respectively) there is an associated weight matrix $W\in\reals^{n_i\times n_j}$ st $\pmb{f}^j=W^T\pmb{f}^i$.
   \end{definition}
 
-  \begin{remark}{Discriminating Power of Differt Depth Fully Connected DNNs}
+  \begin{remark}{Discriminating Power of Different Depth Fully Connected DNNs}
     A \textit{Fully Connected DNN} with a \underline{single} hidden layer is sufficient to represent any boolean or continuous function, althought the layer may be exponentially wider than the input.
     \par A \textit{Fully Connected DNN} with \textit{two} hidden layers is sufficient to represent any mathematical function.
   \end{remark}
 
   \begin{proposition}{MLPs as Computation Graphs}
     \[\begin{array}{rrrll}
-      &s_i^j&:=&(W^j)^Tf^{j-1}&\tiny\text{weighted sum of the $i^{th}$ node of the $j^{th}$ hidden layer}\\
+      &\mathbf{s}^j&:=&(W^j)^T\mathbf{f}^{j-1}&\tiny\text{weighted sum of the $i^{th}$ node of the $j^{th}$ hidden layer}\\
       \implies&\dfrac{\partial s_i^j}{\partial w_{ii}^j}&=&f_i^{j-1}\\
       &f_i^j&:=&g_i^j(s_i^j)&\tiny\text{$i^{th}$ output vajue of $j^{th}$ hidden layer}\\
       \implies&\dfrac{\partial f_i^j}{\partial s_i^j}&=&\text{depends on def of }g_i^j
@@ -462,7 +477,9 @@
     Here are some features which distinguish \textit{Convolution Layer}s away from \textit{Fully Connect Layer}s
     \begin{enumerate}
       \item \textit{Sparse Interactions}. In CNNs a node in one layer does not necessarily connected to every node in the next layer. This means that changing this node will not affect every node in the next layer. This is ideal due to the grid structure of the input, where there is implicit relationships between adjacent cells/cell groups (e.g. adjacent pixels in an image).
-      \item \textit{Parameter Sharing}. The same parameter/weight is used for more than one function in the network. This can be considered as tying two parameters together st that have the same value. We use prior knowledge to decide which nodes to tie together (rather than doing it randomly). This reduces the number of parameters which need to be optimised (which means less data is required for training). The number of reduced parameters increases for later layers. This does not affect the runtime of the forward pass, but significantly reduces the memory requirements of the model. %TODO
+      \item \textit{Parameter Sharing}. The same parameter/weight is used for more than one function in the network. This can be considered as tying two parameters together st that have the same value. We use prior knowledge to decide which nodes to tie together (rather than doing it randomly). This reduces the number of parameters which need to be optimised (which means less data is required for training). The number of reduced parameters increases for later layers. This does not affect the runtime of the forward pass, but significantly reduces the memory requirements of the model.
+      \par The sharing occurs as the same filter is applied to multiple parts of the image, producing several outputs for its layer. This can be seen as equivalent functions being applied to each location.
+
       \item \textit{Equi-variant Representations}. If the input changes/shifts in a certain way (e.g. translation), then the output changes in exactly the same way. This is as a result of the previous two properties. However, CNNs are \underline{not} equivariant to rotation or scaling.
     \end{enumerate}
   \end{remark}
@@ -633,7 +650,7 @@
     Here are some notable properties of an \textit{RNN}:
     \begin{itemize}
       \item \textit{RNNs} scale better to much longer sequences of data than other ANN architectures.
-      \item \textit{RNNs are Lossy} - The \textit{Model} $f$ is a \textit{lossy summary}\footnote{It is a lower dimensional projection of the input, meaning not all information from the input is carried forward.} of the input $x$, this means that some information is lost each time the model is applied. Moreover, the influence $x_{t-n}$ has on $h_t$ decreases as $n$ increases, which may not be desirable.\footnote{This is a realisation of the \textit{Vanashing gradient problem} as gradients propagated over long periods of time tend to either vanish or explode. Neither of which is useful.}
+      \item \textit{RNNs are Lossy} - The \textit{Model} $f$ is a \textit{lossy summary}\footnote{It is a lower dimensional projection of the input, meaning not all information from the input is carried forward.} of the input $x$, this means that some information is lost each time the model is applied. Moreover, the influence $x_{t-n}$ has on $h_t$ decreases as $n$ increases, which may not be desirable.\footnote{This is a realisation of the \textit{Vanashing gradient problem} as gradients propagated over long periods of time tend to either vanish or explode. Neither of which is useful.}\footnote{Begin lossy results in a \textit{Short-Term Memory} where more recently seen data has a greater affect on the output.}
       \par \textit{Gated RNNs} attempt to mitigate this issue by controlling what information is passed onto the next layer.
     \end{itemize}
   \end{remark}
@@ -865,18 +882,53 @@
 
       \item Compute the error derivative $\delta_j^N$ of the cost function wrt the signals of the last hidden layer $s_j^N$.
       \[ \delta_j^N:=\frac{\partial J}{\partial s_j^N}={g_j^N}'(s_j^N)\cdot\delta_j^{N+1} \]
+      \textit{NB} - This is preparing for \textit{Auto-Differentiation}.
 
       \item Layer-by-layer: Calculate the \textit{error derivatives} $\delta_i^{l-1}$ of the cost function wrt the signal $s_j^{l-1}$  of each neuron in the next layer, using the error derivatives $\delta_j^l$ of the layer above.
       \[ \delta_i^{l-1}:=\frac{\partial J}{\partial s_i^{l-1}}={g_i^{l-1}}'(s_i^{l-1})\sum_{j=1}^{d(l)}w_{ij}^l\delta_j^l \]
       where $d(l)$ is the width of the $l^{th}$ layer.
+      \par \textit{NB} - This is applying \textit{Auto-Differentiation}.
 
       \item Calculate the error derivates $\frac{\partial J}{\partial w_{ik}^l}$ wrt to the weights of each neuron $w_{ik}^l$ using the error derivatives of the neuron activities $\delta_j^l$.
       \[ \frac{\partial J}{\partial w_{ij}^l}:=\frac{\partial J}{\partial s_j^l}\frac{\partial s_j^l}{\partial w_{ij}^l}=\delta_j^lf_i^{l-1} \]
+      \textit{NB} - This is applying the \textit{Chain Rule}.
 
       \item Update all weights $w_{ij}^l$ based on the deltas and neuron activities using the \textit{Gradient Descent} learning rule
-      \[ w_{ij}^l\leftarrow w_{ij}^l-\eta f_i^{l-1}\delta_j^l\]
+      \[\begin{array}{rcl}
+        w_{ij}^l&\leftarrow& w_{ij}^l-\eta f_i^{l-1}\delta_j^l\\
+        \mathbf{w}^l&\leftarrow& \mathbf{w}^l-\eta (\mathbf{f}^{l-1})^T\pmb{\delta}^l\\
+      \end{array}\]
       where $\eta$ is a pre-defined learning rate.
+      \par \textit{NB} - This is the \textit{Gradient-Descent} update rule.
     \end{enumerate}
+  \end{proposition}
+
+  \begin{proposition}{Step iii) - $\dfrac{\partial J}{\partial f_j^N}$}
+    \everymath={\displaystyle}
+    The derivative of the \textit{Cost Function} $J$ wrt the outputs $\mathbf{f}^N$ depends on the definition of the \textit{Cost Function} and thus on the \textit{Distance Measure} $L(\cdot,\cdot)$ it uses.
+    \par Here are some examples
+    \begin{itemize}
+      \item \textit{Empirical Risk} and \textit{Quadratic Loss Function}
+      \[\begin{array}{rrl}
+        L(x,y)&:=&(x-y)^2\\
+        \text{and }J(\mathbf{f}^*,\mathbf{f}^N)&:=&\frac1m\sum_{i=1}^m(f_i^*-f_i^N)^2\text{ where }|\mathbf{f}^*|=|\mathbf{f}^N|=m\\
+        \implies \frac{\partial L}{\partial y}&=&-2(x-y)\\
+        \implies \frac{\partial J}{\partial \mathbf{f}^N}&=&\begin{pmatrix}
+        -\frac2m(f_1^*-f_1^N)&\dots&-\frac2m(f_m^*-f_m^N)
+        \end{pmatrix}\\
+        \implies \delta_j^{N+1}&:=&\frac{\partial J}{\partial f_j^N}=\frac{-2}m(f_j^*-f_j^N)\\
+      \end{array}\]
+      \item \textit{Empirical Risk} and \textit{Absolute Loss Function}
+      \[\begin{array}{rrl}
+        L(x,y)&:=&|x-y|\\
+        \text{and }J(\mathbf{f}^*,\mathbf{f}^N)&:=&\frac1m\sum_{i=1}^m|f_i^*-f_i^N|\text{ where }|\mathbf{f}^*|=|\mathbf{f}^N|=m\\
+        \implies \frac{\partial L}{\partial y}&=&-\frac{(x-y)}{|x-y|}\\
+        \implies \frac{\partial J}{\partial \mathbf{f}^N}&=&\begin{pmatrix}
+        -\frac{(f_1^*-f_1^N)}{|f_1^*-f_1^N|}&\dots&-\frac{(f_m^*-f_m^N)}{|f_m^*-f_m^N|}
+        \end{pmatrix}\\
+        \implies \delta_j^{N+1}&:=&\frac{\partial J}{\partial f_j^N}=-\frac{(f_j^*-f_j^N)}{|f_j^*-f_j^N|}
+      \end{array}\]
+    \end{itemize}
   \end{proposition}
 
   \begin{proof}{Derivation of $\delta_i^{l-1}$}
@@ -912,11 +964,12 @@
     \par The step-function does not fulfil this. This is addressed (usually) by using the \textit{ReLU} activation function.
   \end{remark}
 
-\subsubsection{Backpropagation Through Time}
-
-  \begin{proposition}{Backpropagation Through Time}
-    % used by RNNs
-  \end{proposition}
+% \subsubsection{Backpropagation Through Time}
+%
+%   \begin{proposition}{Backpropagation Through Time}
+%     \textit{Backpropagation Through Time} is used to train \textit{RNNs}. As each output of an \textit{RNN} is based on different amounts of accumulated information, standard \textit{Backpropagation} cannot be used.
+%     \par The forward propagation and loss function value calculate is unchanged from \textit{Backpropagation}, other than for the mechanics of an RNN.
+%   \end{proposition}
 
 \subsection{Gradient Descent} \label{sec_GradientDescent}
 
@@ -972,6 +1025,11 @@
     \end{itemize}
   \end{remark}
 
+  \begin{remark}{Ideal Step Length}
+    When looking for minima we want to make \underline{longer} steps in areas of shallow gradient, and \underline{shorter} steps in area of steep gradient.
+    \par This means less time is spent in regions which do not help us towards our goal, and more time in those that might.
+  \end{remark}
+
 \subsubsection{Stochastic \& Deterministic Gradient Descent} \label{sec_SDGD}
 
   \begin{definition}{Alternatives to \textit{Online Gradient Descent}}
@@ -988,8 +1046,9 @@
 
   \begin{definition}{Learning via Momentum}
     \textit{Momentum} is a extension to the \textit{Gradient Descent} weight update rule. Rather than a fixed learning rate $\eta$, a velocity term $v_t$ is introduced which defines the step length and direction. The closer the direction of the previous step is aligned to the direction of the current step, the longer the step length is.
-    \[ W^l\rightarrow W^l+\underbrace{v^l_{t+1}}_\text{momentum}\quad\text{where}\quad v^l_{t+1}:=\alpha\cdot v^l_t-\eta\nabla J(X;W_t^l) \]
+    \[ W^l\leftarrow W^l+\underbrace{v^l_{t+1}}_\text{momentum}\quad\text{where}\quad v^l_{t+1}:=\alpha v^l_t-\eta\nabla J(X;W_t^l) \]
     where $\alpha,\eta$ are hyperparameters for momentum and learning rate, respectively.
+    \par Moreover, $\alpha\in[0,1]$ can be considered a \textit{Frictional Force} as it prevents the steps increasing without limit.
   \end{definition}
 
   \begin{proposition}{Nesterov Accelerated Gradient (NAG)}
@@ -999,9 +1058,27 @@
     \textit{NAG} is consistently better that \textit{Learning via Momentum} in practice.
   \end{proposition}
 
+  \begin{remark}{Building Momentum}
+    In \textit{Learning via Momentum} and \textit{NAG}, \textit{Momentum} builds up as we take steps in the same direction and dissipates as we deviate from this direction.
+  \end{remark}
+
+  \begin{remark}{Interpretting $v_{t+1}^l$}
+    The two terms in the definitions of $v_{t+1}^l$ for both \textit{Learning via Momentum} and \textit{NAG} can be interpreted as
+    \begin{itemize}
+      \item[$\alpha v_t^l$] \textit{Velocity} already in the system.
+      \item[$\eta\nabla J$] \textit{Acceleration} being added to the system.
+    \end{itemize}
+  \end{remark}
+
   \begin{remark}{Limitations of Momentum Methods}
     Methods which use momentum progress very slowly in shallow plateau regions of the cost function state space as momentum is not able to build up. This can be rectified by tuning the learning rate.
   \end{remark}
+
+  \begin{remark}{Learning via Momentum vs. NAG}
+    \textit{NAG} reduces momentum earlier, decreasing the chance of overshooting.
+  \end{remark}
+
+\subsubsection{Newton's Method} \label{sec_NewtonMethod}
 
   \begin{proposition}{Newton's Method}
     \textit{Newton's Method} removes all hyperparameters ($\eta$ and $\alpha$) and instead uses curvature to rescale the gradient by multiplying the gradient by the inverse Hessian of the current cost function $H(J(X;W_t))$.
@@ -1027,6 +1104,12 @@
     where $\eta$ is a hyper-parameter for the learning rate; $g_t$ is the gradient for this weight in this iteration; $M_t$ is the square-sum of all observed gradients for this weight; and, $\varepsilon>0$ is a small constant to prevent dividing by zero.
   \end{definition}
 
+  \begin{remark}{Result}
+    The \textit{AdaGrad} algorithm decreases the learning rate for parameters whose weights have been high in the past, and increases the learning rate for weights which have had small gradients in the past. This is desirable.
+    \par A limitation is that all previous observations is given the same influence on the learning rate, we probably want more recent observations to have greater influence.
+    \par Further, if the learning rate is dramatically increased/decreased in the early learning iterations then it is hard for it to recover.
+  \end{remark}
+
 \subsubsection{Root-Mean-Square Propagation (RMSProp)} \label{sec_RMSProp}
 
   \begin{definition}{Root-Mean-Square Propagation (RMSProp)}
@@ -1037,6 +1120,11 @@
     \]
     where $\eta$ is a hyper-parameter for the learning rate; $g_t$ is the gradient for this weight in this iteration; $M_t$ is an  exponentially decaying average\footnote{The influence of each gradient in $M_t$ decays over time. The closer $\beta$ is to $\frac12$ the quicker this occurs.} of the square of all previously observed gradients of this weight; and, $\varepsilon>0$ is a small constant to prevent dividing by zero.
   \end{definition}
+
+  \begin{remark}{Result}
+    The \textit{RMSProp} algorithm decreases the learning rate for parameters whose weights have been high in the past, and increases the learning rate for weights which have had small gradients in the past. This is desirable.
+    \par The advantage of \textit{RMSProp} over \textit{AdaGrad} is that the influence of early observations decreases-exponentially over time.
+  \end{remark}
 
 \subsubsection{Adaptive Moment Estimation (AdaM)} \label{sec_AdaM}
 
@@ -1049,9 +1137,10 @@
       \bar{G}&:=&\frac{G_t}{1-\alpha^{t-1}}\\
       M_t&:=&(1-\beta)g_t^2+\beta M_{t-1}\\
       \bar{M}&:=&\frac{M_t}{1-\beta^{t-1}}\\
-      w_i&\leftarrow&w_i-\frac{\eta\bar{G}}{\sqrt{\bar{A}}+\varepsilon}
+      w_i&\leftarrow&w_i-\frac{\eta\bar{G}}{\sqrt{\bar{M}}+\varepsilon}
     \end{array}\]
     where $\alpha,\beta,\eta$ are hyper-parameters for the learning and decay rates; $g_t$ is the gradient for this weight in this iteration; $G_t,M_t$ are an exponentially decaying averages for previously observed gradients of $w_i$, and their squared value; and, $\varepsilon>0$ is a small constant to prevent dividing by zero.
+    \par $\bar{G},\bar{M}$ are bias-corrected versions of $G_t,M_t$.
   \end{definition}
 
   \begin{remark}{$\bar{G}$ and $\bar{M}$}
@@ -1083,9 +1172,9 @@
     Let $x,x^*\in\reals$ with $x$ representing an estimate and $x^*$ the true value.
     \par Here are some popular measures of distance between real-valued quantities.
     \begin{itemize}
-      \item[\textit{Identity Distance}] $L(x,x^*):=|x-x^*|$
-      \item[\textit{Absolute Distance}] $L(x,x^*):=(x-x^*)^2$
-      \item[\textit{Quadratic Distance}] $L(x,x^*):=\indexed\{x\equiv x^*\}=\begin{cases}1&\text{if }x\equiv x^*\\0&\text{otherwise} \end{cases}$
+      \item[\textit{Identity Distance}] $L(x,x^*):=\indexed\{x\equiv x^*\}=\begin{cases}0&\text{if }x\equiv x^*\\1&\text{otherwise} \end{cases}$
+      \item[\textit{Absolute Distance}] $L(x,x^*):=|x-x^*|$
+      \item[\textit{Quadratic Distance}] $L(x,x^*):=(x-x^*)^2$
     \end{itemize}
   \end{proposition}
 
@@ -1133,7 +1222,12 @@
 \section{Training} \label{sec_Training}
 
   \begin{remark}{Training a Model}
-    Once an architecture for an ANN is decided, there are still decisions to be made about how to traing the model. This decisions generally trade-off between: Training Accuracy, Testing Accuracy, and Computational Resources.
+    Once an architecture for an ANN is decided, there are still decisions to be made about how to training the model. This decisions generally trade-off between: Training Accuracy, Testing Accuracy, and Computational Resources.
+  \end{remark}
+
+  \begin{remark}{Which layers learn most?}
+    The later layers of a network learn ``the most'', as in their weights will change most from the values they were initialised with.
+    \par This is due to gradients of each layer depending upon the gradients of the layer after them (due to direction of backpropagation), meaning gradients shrink over time and thus the earlier layers are not updated as much.
   \end{remark}
 
   \begin{proposition}{Testing \& Training Data Sets}
@@ -1231,13 +1325,16 @@
   \end{proposition}
 
   \begin{definition}{Batch Normalisation}
-    \textit{Batch Normalisation} normalises layer inputs so the distribution of these inputs does not vary while training and adjusting parameters. This speeds up convergence by changing each input distribution to have zero mean and unit variance. The equation used is
+    \textit{Batch Normalisation} normalises layer inputs so the distribution of these inputs does not vary between features while training and adjusting parameters. This speeds up convergence by changing each input distribution to have zero mean and unit variance. The equation used is
     \[ \hat{x}_{i,c,x,y}=\gamma_c\cdot\frac{x_{i,c,x,y}-\mu_c}{\sqrt{\sigma^2_c+\epsilon}}+\beta_c \]
     where $x_{i,c,x,y}$ is the input to the layer, $\hat{x}_{i,c,x,y}$ is the transformed value which will be used as an input, $i,c,x,y$ define the batch,channel,width \& height position of the input, $\mu_c$ and $\sigma^2_c$ are the mean and variance for each training batch; $\epsilon$ is a small constant for numerical stability (ie when $\sigma^2_c$ is 0).
     \par $\gamma_c$ and $\beta_c$ are introduced to ensure the ANN can still represent all mathematical functions.
     \textit{Batch Normalisation} is typically added after each convolution or fully connected layer, and before the activation function. \textit{Batch Normalisation} should not be applied to the output layer for classification.
-    \par \textit{Batch Normalisation} allows for greater \textit{Learning Rates} to be used.
   \end{definition}
+
+  \begin{remark}{Advantages of Batch Normalisation}
+    \textit{Batch Normalisation} means all features have the same distribution. In turn this makes the \textit{Cost Function} more symmetric allowing for a greater learning rate and means the initial parameter values matter less.
+  \end{remark}
 
 \reference
 
@@ -1340,7 +1437,7 @@
   \end{definition}
 
   \begin{example}{Auto-Differentiation using a Feedforward Computational Graph}
-    Consider calcualte $\frac{\partial f}{\partial a}$ for the graph in  \texttt{Figure \ref{fig_Feedforward_Computational_Graph}}.
+    Consider calcualte $\frac{\partial a}{\partial f}$ for the graph in  \texttt{Figure \ref{fig_Feedforward_Computational_Graph}}.
     \begin{enumerate}
       \item There are three paths from $f$ to $a$ in the graph: (1) $f\to d\to b\to a$; (2) $f\to e\to b\to a$; and, (3) $f\to e\to c\to a$.
       \item We need to calculate the following sets of partial derivatives: $\frac{\partial d}{\partial f},\frac{\partial b}{\partial d},\frac{\partial a}{\partial b}$ for (1); $\frac{\partial e}{\partial f},\frac{\partial b}{\partial e},\frac{\partial a}{\partial b}$ for (2); and, $\frac{\partial e}{\partial f},\frac{\partial c}{\partial e},\frac{\partial a}{\partial c}$ for (3).

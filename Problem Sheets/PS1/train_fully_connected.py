@@ -64,6 +64,7 @@ class MLP(nn.Module):
     def forward(self,inputs:torch.Tensor) -> torch.Tensor:
         x=self.l1(inputs) # first calculation
         x=self.activation_fn(x)
+        print(x)
         x=self.l2(x)
         return x
 
